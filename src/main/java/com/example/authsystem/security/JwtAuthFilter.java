@@ -22,7 +22,7 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
+    private final @org.springframework.context.annotation.Lazy UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
