@@ -1,2 +1,1 @@
-ALTER TABLE refresh_tokens
-ADD COLUMN revoked BOOLEAN NOT NULL DEFAULT FALSE;
+-- Already handled in V4, keeping file for version sync
