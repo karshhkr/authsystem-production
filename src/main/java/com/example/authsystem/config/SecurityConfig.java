@@ -34,7 +34,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
@@ -60,11 +59,17 @@ public class SecurityConfig {
 
         return http.build();
     }
-    //  CORS: frontend domain allow (dev me * ok, prod me specific domain)
+
+    //  CORS: dev में localhost allow, prod में frontend domain डालना होगा
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173")); // react/vite
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:5173"
+                // 👉 जब frontend Railway/Vercel/Netlify पर deploy करोगे,
+                // उस domain को भी यहां add करना होगा
+        ));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
