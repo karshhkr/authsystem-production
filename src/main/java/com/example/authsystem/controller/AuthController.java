@@ -1,14 +1,22 @@
 package com.example.authsystem.controller;
 
-import com.example.authsystem.dto.*;
+import com.example.authsystem.dto.AuthResponse;
+import com.example.authsystem.dto.LoginRequest;
+import com.example.authsystem.dto.RefreshTokenRequest;
+import com.example.authsystem.dto.RegisterRequest;
+import com.example.authsystem.dto.UserResponse;
 import com.example.authsystem.service.RefreshTokenService;
 import com.example.authsystem.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:5174")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -16,24 +24,24 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
 
     @PostMapping("/register")
-    public UserResponse register(@Valid @RequestBody RegisterRequest request) {
-        return userService.registerUser(request);
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(userService.registerUser(request));
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return userService.login(request);
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @PostMapping("/refresh")
-    public RefreshTokenResponse refresh(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<Map<String, String>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         String newAccessToken = refreshTokenService.refreshAccessToken(request.refreshToken());
-        return new RefreshTokenResponse(newAccessToken);
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
     @PostMapping("/logout")
-    public String logout(@RequestBody LogoutRequest request) {
+    public ResponseEntity<Map<String, String>> logout(@Valid @RequestBody RefreshTokenRequest request) {
         refreshTokenService.logout(request.refreshToken());
-        return "Logged out successfully";
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }

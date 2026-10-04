@@ -3,6 +3,7 @@ package com.example.authsystem.services.impl;
 import com.example.authsystem.dto.*;
 import com.example.authsystem.entity.RefreshToken;
 import com.example.authsystem.entity.User;
+import com.example.authsystem.entity.Role;
 import com.example.authsystem.exception.ApiException;
 import com.example.authsystem.repository.UserRepository;
 import com.example.authsystem.security.JwtService;
@@ -13,7 +14,6 @@ import org.springframework.data.domain.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.authsystem.entity.Role;
 import java.time.Instant;
 import java.util.List;
 
@@ -26,17 +26,16 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
 
-
     @Override
     public UserResponse getCurrentUser(String email) {
-        User user = userRepository.findByEmailAndDeletedFalse(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ApiException("User not found"));
         return mapToResponse(user);
     }
 
     @Override
     public UserResponse updateProfile(String email, UpdateProfileRequest request) {
-        User user = userRepository.findByEmailAndDeletedFalse(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ApiException("User not found"));
 
         user.setName(request.getName());
@@ -46,7 +45,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void changePassword(String email, ChangePasswordRequest request) {
-        User user = userRepository.findByEmailAndDeletedFalse(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ApiException("User not found"));
 
         if (!passwordEncoder.matches(request.oldPassword(), user.getPassword())) {
@@ -68,39 +67,40 @@ public class UserServiceImpl implements UserService {
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
-                .deleted(false)
+                .isDeleted(false)
                 .build();
 
         User saved = userRepository.save(user);
         return mapToResponse(saved);
     }
+
     @Override
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailAndDeletedFalse(request.email())
+        User user = userRepository.findByEmailAndIsDeletedFalse(request.email())
                 .orElseThrow(() -> new ApiException("User not found or account deactivated"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new ApiException("Invalid email or password");
         }
 
-        // Professional Way: Generate Access Token
         String accessToken = jwtService.generateToken(user.getEmail());
-
-        // Generate Refresh Token (Ensuring rotation if needed)
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getEmail());
 
         return AuthResponse.builder()
-                .accessToken(accessToken)
+                .token(accessToken)
                 .refreshToken(refreshToken.getToken())
-                .user(mapToResponse(user))
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
                 .build();
     }
 
-    //  ADMIN METHODS
+    // ADMIN METHODS
 
     @Override
     public UserPageResponse adminGetUsers(int page, int size, String search, String role, Boolean deleted) {
-
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         Page<User> usersPage = userRepository.searchUsers(
                 (search == null || search.isBlank()) ? null : search,
@@ -138,7 +138,7 @@ public class UserServiceImpl implements UserService {
 
         if (user.isDeleted()) return;
 
-        user.setDeleted(true);
+        user.setIsDeleted(true);
         user.setDeletedAt(Instant.now());
         userRepository.save(user);
     }
@@ -148,7 +148,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ApiException("User not found"));
 
-        user.setDeleted(false);
+        user.setIsDeleted(false);
         user.setDeletedAt(null);
         userRepository.save(user);
     }

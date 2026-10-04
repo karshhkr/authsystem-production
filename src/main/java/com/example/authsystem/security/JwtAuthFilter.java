@@ -34,6 +34,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // Bypass CORS preflight requests so they don't get blocked by filters
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -47,7 +53,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String userEmail = jwtService.extractEmail(token);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                User user = userRepository.findByEmailAndDeletedFalse(userEmail).orElse(null);
+                User user = userRepository.findByEmailAndIsDeletedFalse(userEmail).orElse(null);
 
                 if (user != null) {
                     Role roleEnum = user.getRole();

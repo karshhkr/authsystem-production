@@ -13,17 +13,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
-    //  non-deleted
-    Optional<User> findByEmailAndDeletedFalse(String email);
-
-
+    @Query("SELECT u FROM User u WHERE u.email = :email AND (u.isDeleted = false OR u.isDeleted IS NULL)")
+    Optional<User> findByEmailAndIsDeletedFalse(@Param("email") String email);
 
     @Query("""
         SELECT u FROM User u
-        WHERE (:deleted IS NULL OR u.deleted = :deleted)
-          AND (:role IS NULL OR u.role = :role)
+        WHERE (:deleted IS NULL OR u.isDeleted = :deleted)
+          AND (:role IS NULL OR CAST(u.role AS string) = :role)
           AND (:search IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%'))
-                         OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))
+                               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))
     """)
     Page<User> searchUsers(
             @Param("search") String search,

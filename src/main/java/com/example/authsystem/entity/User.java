@@ -32,10 +32,15 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    //  soft delete
-    @Column(nullable = false)
-    private boolean deleted = false;
+    // soft delete with Lombok Builder default fallback mapped to is_deleted column
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false, columnDefinition = "boolean default false")
+
+    private boolean isDeleted = false;
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    public void setIsDeleted(boolean b) {
+    }
 }

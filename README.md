@@ -75,6 +75,11 @@ src/main/java/com/example/authsystem │
 - DELETE /api/admin/users/{id}
 
 ---
+## 🔑 Key Features
+- **Stateless Authentication:** Secure JWT issuance and validation filter chain.
+- **Role-Based Authorization:** Granular endpoint permissions across `ADMIN` and `USER` roles.
+- **Centralized Exception Handling:** Standardized error structures eliminating unhandled 500 exceptions.
+- **Automated Root Redirection:** Direct navigation from base URL to interactive Swagger UI.
 
 ## ⚙️ How To Run
 

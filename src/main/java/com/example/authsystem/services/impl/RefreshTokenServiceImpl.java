@@ -28,17 +28,17 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Transactional
     public RefreshToken createRefreshToken(String email) {
 
-        User user = userRepository.findByEmailAndDeletedFalse(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ApiException("User not found"));
 
-        //  one user -> one active refresh token
+        // maintain one active refresh token per user
         refreshTokenRepository.deleteByUser(user);
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(user)
                 .expiryDate(Instant.now().plusSeconds(REFRESH_EXPIRATION))
-                .revoked(false) //  important (since column exists)
+                .revoked(false)
                 .build();
 
         return refreshTokenRepository.save(refreshToken);
@@ -48,7 +48,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Transactional
     public String refreshAccessToken(String refreshToken) {
 
-        //  join fetch user to avoid lazy session issue
         RefreshToken tokenEntity = refreshTokenRepository.findByTokenWithUser(refreshToken)
                 .orElseThrow(() -> new ApiException("Invalid refresh token"));
 
@@ -72,7 +71,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         RefreshToken tokenEntity = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new ApiException("Invalid refresh token"));
 
-        //  revoke instead of delete (better + matches your DB column)
         tokenEntity.setRevoked(true);
         refreshTokenRepository.save(tokenEntity);
     }

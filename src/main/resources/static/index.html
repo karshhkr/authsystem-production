@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuthSystem Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 2rem; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        .error { color: red; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="card" id="auth-card">
+    <h2 id="form-title">Login to AuthSystem</h2>
+    <div id="error-msg" class="error"></div>
+
+    <div id="name-field" class="hidden">
+        <label>Name:</label>
+        <input type="text" id="name" placeholder="Enter your name">
+    </div>
+
+    <label>Email:</label>
+    <input type="email" id="email" placeholder="Enter email">
+
+    <label>Password:</label>
+    <input type="password" id="password" placeholder="Enter password">
+
+    <button id="action-btn" onclick="handleAuth()">Login</button>
+
+    <p style="text-align: center; margin-top: 15px;">
+        <span id="toggle-text">Don't have an account? <a href="#" onclick="toggleMode()">Register</a></span>
+    </p>
+</div>
+
+<div class="card hidden" id="dashboard-card">
+    <h2>Welcome to Dashboard! 🎉</h2>
+    <p>Aap successfully authenticate ho chuke hain.</p>
+    <p><strong>JWT Token:</strong> <span id="token-display" style="word-break: break-all; font-size: 0.8rem; color: #555;"></span></p>
+    <button onclick="logout()" style="background: #dc3545; margin-top: 20px;">Logout</button>
+</div>
+
+<script>
+    let isLoginMode = true;
+
+    function toggleMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('form-title').innerText = isLoginMode ? "Login to AuthSystem" : "Register to AuthSystem";
+        document.getElementById('action-btn').innerText = isLoginMode ? "Login" : "Register";
+        document.getElementById('name-field').classList.toggle('hidden', isLoginMode);
+        document.getElementById('toggle-text').innerHTML = isLoginMode ?
+            `Don't have an account? <a href="#" onclick="toggleMode()">Register</a>` :
+            `Already have an account? <a href="#" onclick="toggleMode()">Login</a>`;
+        document.getElementById('error-msg').innerText = "";
+    }
+
+    async function handleAuth() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const name = document.getElementById('name').value;
+        const errorDiv = document.getElementById('error-msg');
+
+        errorDiv.innerText = "";
+
+        const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+        const payload = isLoginMode ? { email, password } : { name, email, password };
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Authentication failed!");
+            }
+
+            if (isLoginMode) {
+                localStorage.setItem('token', data.accessToken);
+                showDashboard(data.accessToken);
+            } else {
+                alert("Registration successful! Please login.");
+                toggleMode();
+            }
+        } catch (err) {
+            errorDiv.innerText = err.message;
+        }
+    }
+
+    function showDashboard(token) {
+        document.getElementById('auth-card').classList.add('hidden');
+        document.getElementById('dashboard-card').classList.remove('hidden');
+        document.getElementById('token-display').innerText = token;
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        document.getElementById('dashboard-card').classList.add('hidden');
+        document.getElementById('auth-card').classList.remove('hidden');
+    }
+
+    // Check if already logged in
+    window.onload = function() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            showDashboard(token);
+        }
+    }
+</script>
+
+</body>
+</html>
